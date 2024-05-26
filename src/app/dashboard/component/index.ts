@@ -1,9 +1,11 @@
+import LayoutApp from "./layout";
 import Nav from "./nav";
 import Sidebar from "./sidebar";
 
 const dashboardLayout = {
-    Sidebar,
-    Nav
-}
+  Nav,
+  Sidebar,
+  LayoutApp,
+};
 
 export default dashboardLayout;

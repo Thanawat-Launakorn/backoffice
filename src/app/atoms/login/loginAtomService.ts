@@ -13,6 +13,7 @@ class LoginAtomService {
   private readonly _initReturnValue: LoginResponse = {
     access_token: "",
     response_status: 0,
+    response: { errorDetails: { errorDesc_EN: "", errorDesc_TH: "" } },
   };
 
   private _response = atom<LoginResponse>(this._initReturnValue);
@@ -32,6 +33,7 @@ class LoginAtomService {
     async (_get, set, signal: AbortSignal, bodys: LoginRequest) => {
       set(this._isLoading, true);
       set(this._responseError, false);
+      console.log("body loginAtomService ===>", bodys);
       let returnValue: LoginResponse;
       returnValue = await fetch(`${projectConfig.envpoint}auth/login`, {
         signal,
@@ -52,9 +54,10 @@ class LoginAtomService {
           }
           const json: LoginResponse = await res.json();
           set(this._response, json);
-          set(this._isLoading, false)
+          set(this._isLoading, false);
           set(this._responseError, false);
           returnValue = {
+            response: json.response,
             access_token: json.access_token,
             response_status: json.response_status,
           };

@@ -9,11 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@nextui-org/table": "^2.0.33",
+    "@tanstack/react-table": "^8.17.3",
     "jotai": "^2.8.1",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
+    "react-icons": "^5.2.1",
     "sweetalert2": "^11.11.0"
   },
   "devDependencies": {

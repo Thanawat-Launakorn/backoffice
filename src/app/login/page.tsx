@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import { InputValues } from "../types";
 import image from "../assets/image/image";
 import { useRouter } from "next/navigation";
+import { storage } from "../helpers/storage";
 import { useAtomValue, useSetAtom } from "jotai";
 import inputComponent from "../components/input";
 import layoutComponent from "../components/layout";
@@ -19,8 +20,8 @@ export default function Login() {
   const { AppInput } = inputComponent;
   const { AppButton } = buttonComponent;
   const { rider, loadingLogin } = image;
+  const { setToken, clearToken } = storage;
   const { Typography } = typographyComponent;
-
   const controller = new AbortController();
   const fetchData = useSetAtom(loginAtomService.fetchData);
   const isLoading = useAtomValue(loginAtomService.isLoading);
@@ -47,20 +48,22 @@ export default function Login() {
       email: inputEmail.value,
       password: inputPassword.value,
     };
-    console.log("body", body);
     fetchData(controller.signal, body).then((res) => {
       if (res.response_status === 200) {
+        const { access_token } = res;
+        setToken(access_token);
         router.push("/dashboard");
       } else {
         Swal.fire({
           icon: "error",
-          title: "Email or password was wrong!",
+          title: "Email or password is wrong!",
           text: "Please check again",
           confirmButtonColor: "green",
         });
       }
     });
   };
+
   useEffect(() => {
     setInputValues({
       email: { value: "john@gmail.com" },
@@ -71,7 +74,13 @@ export default function Login() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex justify-center items-center">
-        <Image src={loadingLogin} alt="gif-loading" width={500} height={500} />
+        <Image
+          src={loadingLogin}
+          alt="gif-loading"
+          width={500}
+          height={500}
+          objectFit="cover"
+        />
       </div>
     );
   }
@@ -80,7 +89,7 @@ export default function Login() {
     <Page>
       <div className="flex h-screen">
         {/* image */}
-        <div className="w-[40%] bg-green-500 flex justify-center items-center px-[50px]">
+        <div className="w-[40%] bg-green-500  justify-center items-center px-[50px] lg:flex hidden">
           <Image
             src={rider}
             alt="rider-image"
@@ -89,7 +98,7 @@ export default function Login() {
           />
         </div>
         {/* content login */}
-        <div className="w-[60%] bg-white flex justify-center items-center">
+        <div className="lg:w-[60%] w-screen bg-white flex justify-center items-center">
           <div className="min-w-[350px]">
             <Typography
               title="Login"
