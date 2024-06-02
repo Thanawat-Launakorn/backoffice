@@ -1,12 +1,17 @@
 "use client";
+import layoutComponent from "../component/layout";
+import authProvider from "../provider/auth";
 
-import dashboardLayout from "../dashboard/component";
-
-export default function Deliver() {
-  const { LayoutApp } = dashboardLayout;
+function Deliver() {
+  const { AuthProvider } = authProvider;
+  const { SidebarPage } = layoutComponent;
   return (
-    <LayoutApp>
-      <></>
-    </LayoutApp>
+    <AuthProvider>
+      <SidebarPage>
+        <></>
+      </SidebarPage>
+    </AuthProvider>
   );
 }
+
+export default Deliver;

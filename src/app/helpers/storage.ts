@@ -1,14 +1,16 @@
+//use token
 const setToken = (access_token: string) => {
   return localStorage.setItem("id_token", access_token);
 };
 
 const getToken = () => {
-  const token = localStorage.getItem("id_token");
-  if (!token) {
-    console.warn("Missing ID token in localStorage");
-    return;
+  if (typeof window !== "undefined") {
+    // 👉🏻 can use localStorage here, on browser
+    const token = localStorage.getItem("id_token");
+    return token;
   }
-  return token;
+
+  return null;
 };
 
 const clearToken = () => {

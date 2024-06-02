@@ -1,5 +1,4 @@
 import { atom } from "jotai";
-import projectConfig from "@/app/config/project.config";
 import { LoginRequest } from "@/app/models/request_body/loginRequestBody";
 import { LoginResponse } from "@/app/models/response_body/loginResponseBody";
 
@@ -13,7 +12,7 @@ class LoginAtomService {
   private readonly _initReturnValue: LoginResponse = {
     access_token: "",
     response_status: 0,
-    response: { errorDetails: { errorDesc_EN: "", errorDesc_TH: "" } },
+    role: "",
   };
 
   private _response = atom<LoginResponse>(this._initReturnValue);
@@ -35,7 +34,7 @@ class LoginAtomService {
       set(this._responseError, false);
       console.log("body loginAtomService ===>", bodys);
       let returnValue: LoginResponse;
-      returnValue = await fetch(`${projectConfig.envpoint}auth/login`, {
+      returnValue = await fetch(`${process.env.ENDPOINT}auth/login`, {
         signal,
         headers: {
           "Content-Type": "application/json",
@@ -53,13 +52,14 @@ class LoginAtomService {
             return this._initReturnValue;
           }
           const json: LoginResponse = await res.json();
+          const { access_token, response_status, role } = json;
           set(this._response, json);
           set(this._isLoading, false);
           set(this._responseError, false);
           returnValue = {
-            response: json.response,
-            access_token: json.access_token,
-            response_status: json.response_status,
+            role,
+            access_token,
+            response_status,
           };
           return returnValue;
         })

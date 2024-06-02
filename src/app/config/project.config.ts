@@ -1,5 +1,6 @@
 const projectConfig = {
-    envpoint: 'http://localhost:3000/'
+  projectName: "backoffice",
+  projectDesc: "",
 };
 
 export default projectConfig;

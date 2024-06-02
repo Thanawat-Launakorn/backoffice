@@ -1,29 +1,33 @@
 "use client";
-
-import React, { useState } from "react";
-import dashboardLayout from ".";
+import React from "react";
+import layoutComponent from ".";
 import { MenuProps } from "./sidebar";
-import { usePathname, useRouter } from "next/navigation";
-import layoutComponent from "@/app/components/layout";
+import { GoPerson } from "react-icons/go";
 import { AiOutlineDashboard } from "react-icons/ai";
 import { IoFastFoodOutline } from "react-icons/io5";
-import { GoPerson } from "react-icons/go";
-import { CgLogOut } from "react-icons/cg";
+import { usePathname, useRouter } from "next/navigation";
 
-type LayoutAppProps = {
+type PageProps = {
+  children: React.ReactNode;
+};
+
+export function Page({ children }: PageProps) {
+  return <div className="min-h-screen bg-white">{children}</div>;
+}
+
+type SidebarProps = {
   children: React.ReactNode;
 };
 
 type Menu = "dashboard" | "product" | "deliver" | "logout";
 
-export default function LayoutApp({ children }: LayoutAppProps) {
+export function SidebarPage({ children }: SidebarProps) {
   const router = useRouter();
   const pathName = usePathname();
-  const { Page } = layoutComponent;
-  const { Nav, Sidebar } = dashboardLayout;
+  const { Page, AppHeader, AppSidebar } = layoutComponent;
 
   const handleClickMenu = (menu: Menu) => {
-    router.replace(`/${menu}`)
+    router.replace(`/${menu}`);
   };
   const menus: MenuProps[] = [
     {
@@ -54,13 +58,16 @@ export default function LayoutApp({ children }: LayoutAppProps) {
   return (
     <Page>
       {/* sidebar */}
-      <Sidebar menus={menus} />
+      <AppSidebar menus={menus} />
       {/* content page */}
-      <div className="p-4 xl:ml-80">
+      <div className="p-4 xl:ml-80 flex flex-col min-h-screen">
         {/* content header */}
-        <Nav />
+        <div className="flex-.5 pb-4">
+          <AppHeader />
+        </div>
+
+        <div className="flex-1">{children}</div>
         {/* content page */}
-        <div className="mt-12">{children}</div>
       </div>
     </Page>
   );

@@ -11,7 +11,7 @@ export type SidebarProps = {
   menus: MenuProps[];
 };
 
-export default function Sidebar({ menus }: SidebarProps) {
+export default function AppSidebar({ menus }: SidebarProps) {
   const ButtonSidebar = (
     title: string,
     isActive: boolean,

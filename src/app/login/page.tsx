@@ -1,85 +1,72 @@
 "use client";
 import Image from "next/image";
-import Swal from "sweetalert2";
-import { InputValues } from "../types";
-import image from "../assets/image/image";
+import image from "../asset/image/image";
+import React, { FormEvent } from "react";
+import layoutComponent from "../component/layout";
+import inputComponent from "../component/input";
+import buttonComponent from "../component/button";
+import typographyComponent from "../component/typography";
 import { useRouter } from "next/navigation";
-import { storage } from "../helpers/storage";
+import Swal from "sweetalert2";
 import { useAtomValue, useSetAtom } from "jotai";
-import inputComponent from "../components/input";
-import layoutComponent from "../components/layout";
-import buttonComponent from "../components/button";
-import React, { useEffect, useState } from "react";
-import typographyComponent from "../components/typography";
-import loginAtomService from "../atoms/login/loginAtomService";
+import loginAtomService from "../atom/login/loginAtomService";
 import { LoginRequest } from "../models/request_body/loginRequestBody";
+import { storage } from "../helpers/storage";
+import headerAtomService from "../atom/headers";
+
+export type LoginState = {
+  message: string;
+};
 
 export default function Login() {
   const router = useRouter();
+  const { setToken } = storage;
   const { Page } = layoutComponent;
   const { AppInput } = inputComponent;
   const { AppButton } = buttonComponent;
   const { rider, loadingLogin } = image;
-  const { setToken, clearToken } = storage;
-  const { Typography } = typographyComponent;
   const controller = new AbortController();
+  const { Typography } = typographyComponent;
   const fetchData = useSetAtom(loginAtomService.fetchData);
+  const setHeader = useSetAtom(headerAtomService.setHeader);
   const isLoading = useAtomValue(loginAtomService.isLoading);
-  const [inputValues, setInputValues] = useState<
-    InputValues<keyof LoginRequest>
-  >({
-    email: { value: "" },
-    password: { value: "" },
-  });
-
-  const onChangeHandler = React.useCallback(
-    (identifier: string, value: string) => {
-      setInputValues({
-        ...inputValues,
-        [identifier]: { value },
-      });
-    },
-    [inputValues]
-  );
-
-  const onPressLogin = () => {
-    const { email: inputEmail, password: inputPassword } = inputValues;
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get("email")?.toString() ?? "";
+    const password = formData.get("password")?.toString() ?? "";
     const body: LoginRequest = {
-      email: inputEmail.value,
-      password: inputPassword.value,
+      email,
+      password,
     };
     fetchData(controller.signal, body).then((res) => {
-      if (res.response_status === 200) {
-        const { access_token } = res;
-        setToken(access_token);
-        router.push("/dashboard");
+      if (Number(res.response_status) === 200) {
+        if (res.role === "admin") {
+          setToken(res.access_token);
+          setHeader(res.access_token);
+          router.replace("/dashboard");
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Dont have permission!",
+          });
+        }
       } else {
         Swal.fire({
           icon: "error",
-          title: "Email or password is wrong!",
-          text: "Please check again",
-          confirmButtonColor: "green",
+          title: "Email or password was wrong!",
         });
       }
     });
   };
-
-  useEffect(() => {
-    setInputValues({
-      email: { value: "john@gmail.com" },
-      password: { value: "changeme" },
-    });
-  }, []);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex justify-center items-center">
         <Image
           src={loadingLogin}
-          alt="gif-loading"
-          width={500}
-          height={500}
-          objectFit="cover"
+          alt="loading-image"
+          objectFit="contain"
+          fill
         />
       </div>
     );
@@ -99,33 +86,28 @@ export default function Login() {
         </div>
         {/* content login */}
         <div className="lg:w-[60%] w-screen bg-white flex justify-center items-center">
-          <div className="min-w-[350px]">
-            <Typography
-              title="Login"
-              size="large"
-              textOptions={{
-                textCase: "upper",
-                textAlign: "center",
-              }}
-            />
-            <div className="my-8" />
-
-            <AppInput
-              label="Email"
-              design="labelSpecial"
-              value={inputValues.email.value}
-              onChange={(e) => onChangeHandler("email", e.target.value)}
-            />
-            <div className="my-8" />
-            <AppInput
-              label="Password"
-              design="labelSpecial"
-              value={inputValues.password.value}
-              onChange={(e) => onChangeHandler("password", e.target.value)}
-            />
-            <div className="my-8" />
-            <AppButton title="login" onPress={onPressLogin} />
-          </div>
+          <form onSubmit={onSubmit}>
+            <div className="min-w-[350px]">
+              <Typography
+                title="Login"
+                size="large"
+                textOptions={{
+                  textCase: "upper",
+                  textAlign: "center",
+                }}
+              />
+              <div className="my-8" />
+              <AppInput name="email" label="Email" design="labelSpecial" />
+              <div className="my-8" />
+              <AppInput
+                name="password"
+                label="Password"
+                design="labelSpecial"
+              />
+              <div className="my-8" />
+              <AppButton title="Login" type="submit" />
+            </div>
+          </form>
         </div>
       </div>
     </Page>
