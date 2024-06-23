@@ -66,7 +66,7 @@ export function SidebarPage({ children }: SidebarProps) {
           <AppHeader />
         </div>
 
-        <div className="flex-1">{children}</div>
+        {children}
         {/* content page */}
       </div>
     </Page>

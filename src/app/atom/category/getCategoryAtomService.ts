@@ -1,21 +1,22 @@
 import { atom } from "jotai";
-import instance from "@/app/axios";
+import axiosConfig from "@/app/axios";
 import { GetCategoryResponse } from "@/app/models/response_body/getCategoryResponseBody";
 
 export type GetCategoryAtomServiceReturnValue = {
   response_status: number;
   response_error: boolean;
-  response: GetCategoryResponse;
+  response: GetCategoryResponse[];
 };
 
 class GetCategoryAtomService {
-  private readonly _initReturnValue: GetCategoryResponse = {
+  private readonly _initReturnValue: GetCategoryResponse[] = [{
+    id: 0,
     image: "",
     category: "",
     description: "",
-  };
+  }];
 
-  private _response = atom<GetCategoryResponse>(this._initReturnValue);
+  private _response = atom<GetCategoryResponse[]>(this._initReturnValue);
 
   public response = atom((get) => get(this._response));
 
@@ -37,18 +38,18 @@ class GetCategoryAtomService {
       response: this._initReturnValue,
     };
 
-    returnValue = await instance
+    returnValue = await axiosConfig.ENDPOINT
       .get(`category/all`)
       .then(async (res) => {
         if (Number(res.status) === 200) {
           console.log("async res url:", res.config.url);
         } else if (Number(res.status) !== 200) {
-          console.error("APIs Response CreateCategory Error", res.data);
+          console.error("APIs Response GetCategory Error", res.data);
           set(this._responseError, true);
           set(this._isLoading, false);
           return returnValue;
         }
-        const json: GetCategoryResponse = await res.data;
+        const json: GetCategoryResponse[] = await res.data;
         set(this._response, json);
         set(this._isLoading, false);
         set(this._responseError, false);
@@ -60,7 +61,7 @@ class GetCategoryAtomService {
         return returnValue;
       })
       .catch((err) => {
-        console.log("Error fetching CreateCategoryAtomService", err);
+        console.log("Error fetching GetCategoryAtomService", err);
         set(this._isLoading, false);
         set(this._responseError, true);
         return returnValue;

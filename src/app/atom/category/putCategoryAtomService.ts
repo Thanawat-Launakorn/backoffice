@@ -44,7 +44,7 @@ class CreateCategoryAtomService {
       returnValue = await fetch(`${process.env.ENDPOINT}category/create`, {
         signal,
         headers,
-        method: "POST",
+        method: "",
         body: JSON.stringify(bodys),
       })
         .then(async (res) => {

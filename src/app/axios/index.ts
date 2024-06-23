@@ -2,9 +2,9 @@ import axios from "axios";
 
 const getToken = () => localStorage.getItem("id_token");
 
-const instance = axios.create();
+const ENDPOINT = axios.create();
 
-instance.interceptors.request.use(
+ENDPOINT.interceptors.request.use(
   (request) => {
     const token = getToken();
     request.baseURL = `${process.env.ENDPOINT}`;
@@ -18,4 +18,8 @@ instance.interceptors.request.use(
   }
 );
 
-export default instance;
+const axiosConfig = {
+  ENDPOINT,
+};
+
+export default axiosConfig;

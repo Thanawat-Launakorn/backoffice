@@ -1,6 +1,6 @@
 "use client";
-import layoutComponent from "../component/layout";
 import authProvider from "../provider/auth";
+import layoutComponent from "../component/layout";
 
 function Dashboard() {
   const { AuthProvider } = authProvider;

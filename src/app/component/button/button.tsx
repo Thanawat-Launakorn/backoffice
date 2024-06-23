@@ -22,10 +22,10 @@ export default function AppButton({
   const { Typography } = typographyComponent;
   return (
     <button
-      disabled={disabled}
       type={type}
       onClick={onPress}
-      className={`bg-green-500 w-full px-2 py-2 transition-all delay-75 hover:brightness-110 rounded-md`}
+      disabled={disabled}
+      className={`bg-green-500 w-full px-2 py-2 transition-all delay-75 hover:brightness-110 rounded-md text-white`}
     >
       <Typography title={title} color="white" size={size} />
     </button>
