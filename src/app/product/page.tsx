@@ -65,6 +65,7 @@ function Product() {
   const [imageURLs, setImageURLs] = useState<string[]>([]);
 
   const headers = useAtomValue(headerAtomService.getHeader);
+
   const deleteCategory = useSetAtom(deleteCategoryAtomService.fetchData);
   const fetchDataCategory = useSetAtom(getCategoryAtomService.fetchData);
   const fetchDataDetailCategory = useSetAtom(
@@ -74,6 +75,7 @@ function Product() {
   const responseCategory = useAtomValue(getCategoryAtomService.response);
 
   const isLoadingCategory = useAtomValue(getCategoryAtomService.isLoading);
+  
   const isLoadingDetailCategory = useAtomValue(
     detailCategoryAtomService.isLoading
   );
@@ -126,7 +128,7 @@ function Product() {
   };
   const onSaveCategory = useCallback(async () => {
     const formData = new FormData();
-    const selectedFile = images[0];
+    const selectedFile = images[0] ?? "";
     if (selectedFile.size > 1024 * 1024 * 2) {
       Swal.fire("File is over for upload", "", "warning");
     }
@@ -144,13 +146,17 @@ function Product() {
           },
         }
       ).then((res) => {
-        if (Number(res.status) === 200) {
+        try {
+          if (Number(res.status) === 200) {
+            Swal.fire("Saved!", "", "success");
+          } else {
+            onCloseCreateCategory();
+            Swal.fire("Changes are not saved", "", "error");
+          }
+        } finally {
+          setImageURLs([]); // <=== clear images 🗑️
           fetchDataCategory();
           onCloseCreateCategory();
-          Swal.fire("Saved!", "", "success");
-        } else {
-          onCloseCreateCategory();
-          Swal.fire("Changes are not saved", "", "error");
         }
       });
 
@@ -163,13 +169,17 @@ function Product() {
         id_token: getToken() as string,
       },
     }).then((res) => {
-      if (Number(res.status) === 200) {
+      try {
+        if (Number(res.status) === 200) {
+          Swal.fire("Saved!", "", "success");
+        } else {
+          onCloseCreateCategory();
+          Swal.fire("Changes are not saved", "", "error");
+        }
+      } finally {
+        setImageURLs([]); // <=== clear images 🗑️
         fetchDataCategory();
         onCloseCreateCategory();
-        Swal.fire("Saved!", "", "success");
-      } else {
-        onCloseCreateCategory();
-        Swal.fire("Changes are not saved", "", "error");
       }
     });
 
@@ -217,15 +227,18 @@ function Product() {
     }).then((result) => {
       if (result.isConfirmed) {
         deleteCategory({ id: +isActive }).then((res) => {
-          if (Number(res.response_status) === 200) {
+          try {
+            if (Number(res.response_status) === 200) {
+              Swal.fire({
+                title: "Deleted!",
+                text: "Your file has been deleted.",
+                icon: "success",
+              });
+            } else {
+              Swal.fire("Changes are not saved", "", "error");
+            }
+          } finally {
             fetchDataCategory();
-            Swal.fire({
-              title: "Deleted!",
-              text: "Your file has been deleted.",
-              icon: "success",
-            });
-          } else {
-            Swal.fire("Changes are not saved", "", "error");
           }
         });
       }
@@ -249,7 +262,7 @@ function Product() {
       <SidebarPage>
         <ManageCategory
           isAPIsFail={false}
-          isAPIsLoading={isAPIsLoading}
+          isAPIsLoading={isEdit ? isLoadingDetailCategory : isAPIsLoading}
           isEdit={isEdit}
           imageURLs={imageURLs}
           inputCategory={inputCategory}
