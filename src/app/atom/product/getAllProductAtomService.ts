@@ -9,14 +9,12 @@ export type GetCategoryAtomServiceReturnValue = {
 };
 
 class GetCategoryAtomService {
-  private readonly _initReturnValue: GetCategoryResponse[] = [
-    {
-      id: 0,
-      image: "",
-      category: "",
-      description: "",
-    },
-  ];
+  private readonly _initReturnValue: GetCategoryResponse[] = [{
+    id: 0,
+    image: "",
+    category: "",
+    description: "",
+  }];
 
   private _response = atom<GetCategoryResponse[]>(this._initReturnValue);
 
@@ -40,7 +38,8 @@ class GetCategoryAtomService {
       response: this._initReturnValue,
     };
 
-    returnValue = await axiosConfig.ENDPOINT.get(`category/all`)
+    returnValue = await axiosConfig.ENDPOINT
+      .get(`category/all`)
       .then(async (res) => {
         if (Number(res.status) === 200) {
           console.log("async res url:", res.config.url);
@@ -67,8 +66,6 @@ class GetCategoryAtomService {
         set(this._responseError, true);
         return returnValue;
       });
-
-    return returnValue;
   });
 }
 

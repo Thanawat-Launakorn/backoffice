@@ -20,6 +20,9 @@ import getCategoryAtomService from "../atom/category/getCategoryAtomService";
 import deleteCategoryAtomService from "../atom/category/deleteCategoryAtomService";
 import { GetCategoryResponse } from "../models/response_body/getCategoryResponseBody";
 import detailCategoryAtomService from "../atom/category/detailCategoryAtomService";
+import axiosConfig from "../axios";
+import getCategoryProductAtomService from "../atom/product/getCategoryProductAtomService";
+import { GetCategoryProductResponse } from "../models/response_body/getCategoryProductResponseBody";
 
 type inputCategoryProps = {
   image: string;
@@ -52,7 +55,6 @@ const columns: ColumnType<GetCategoryResponse>[] = [
 ];
 
 function Product() {
-  const { getToken } = storage;
   const { TableApp } = tableComponent;
   const { AuthProvider } = authProvider;
   const { SidebarPage } = layoutComponent;
@@ -63,19 +65,26 @@ function Product() {
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [isActive, setIsActive] = useState<string>("");
   const [imageURLs, setImageURLs] = useState<string[]>([]);
-
-  const headers = useAtomValue(headerAtomService.getHeader);
+  const [CategoryProduct, setCategoryProduct] = useState<
+    GetCategoryProductResponse[]
+  >([]);
 
   const deleteCategory = useSetAtom(deleteCategoryAtomService.fetchData);
   const fetchDataCategory = useSetAtom(getCategoryAtomService.fetchData);
   const fetchDataDetailCategory = useSetAtom(
     detailCategoryAtomService.fetchData
   );
+  const fetchDataCategoryProduct = useSetAtom(
+    getCategoryProductAtomService.fetchData
+  );
 
   const responseCategory = useAtomValue(getCategoryAtomService.response);
+  const responseCategoryProduct = useAtomValue(
+    getCategoryProductAtomService.response
+  );
 
   const isLoadingCategory = useAtomValue(getCategoryAtomService.isLoading);
-  
+
   const isLoadingDetailCategory = useAtomValue(
     detailCategoryAtomService.isLoading
   );
@@ -136,62 +145,63 @@ function Product() {
     formData.append("category", inputCategory.category.value);
     formData.append("description", inputCategory.description.value);
     if (isActive && isEdit) {
-      const response = await fetch(
-        `${process.env.ENDPOINT}category/update/${isActive}`,
-        {
-          method: "PATCH",
-          body: formData,
-          headers: {
-            id_token: getToken() as string,
-          },
-        }
+      await axiosConfig.ENDPOINT.patch(
+        `category/update/${isActive}`,
+        formData
       ).then((res) => {
         try {
           if (Number(res.status) === 200) {
-            Swal.fire("Saved!", "", "success");
+            fetchDataCategory().then((res) => {
+              const { response, response_status } = res;
+              if (Number(response_status) === 200) {
+                Swal.fire("Saved!", "", "success");
+              }
+            });
           } else {
             onCloseCreateCategory();
             Swal.fire("Changes are not saved", "", "error");
           }
         } finally {
           setImageURLs([]); // <=== clear images 🗑️
-          fetchDataCategory();
           onCloseCreateCategory();
         }
       });
-
-      return response;
-    }
-    const response = await fetch(`${process.env.ENDPOINT}category/create`, {
-      method: "POST",
-      body: formData,
-      headers: {
-        id_token: getToken() as string,
-      },
-    }).then((res) => {
-      try {
-        if (Number(res.status) === 200) {
-          Swal.fire("Saved!", "", "success");
-        } else {
-          onCloseCreateCategory();
-          Swal.fire("Changes are not saved", "", "error");
+    } else {
+      await axiosConfig.ENDPOINT.post(`category/create`, formData).then(
+        (res) => {
+          if (Number(res.status) === 201) {
+            fetchDataCategory().then((res) => {
+              try {
+                const { response_status } = res;
+                if (Number(response_status) === 200) {
+                  Swal.fire("Saved!", "", "success");
+                }
+              } finally {
+                setImageURLs([]); // <=== clear images 🗑️
+                onCloseCreateCategory();
+              }
+            });
+          } else {
+            onCloseCreateCategory();
+            Swal.fire("Changes are not saved", "", "error");
+          }
         }
-      } finally {
-        setImageURLs([]); // <=== clear images 🗑️
-        fetchDataCategory();
-        onCloseCreateCategory();
-      }
-    });
-
-    return response;
-  }, [inputCategory, headers, images]);
+      );
+    }
+  }, [inputCategory, imageURLs]);
 
   const loadCategory = React.useCallback(() => {
     fetchDataCategory();
-  }, []);
+  }, [fetchDataCategory]);
 
   const onCategoryDetail = useCallback((id: string) => {
     setIsActive(id);
+    fetchDataCategoryProduct({ cateogry_id: +id }).then((res) => {
+      const { response, response_status } = res;
+      if (Number(response_status) === 200) {
+        setCategoryProduct(response);
+      }
+    });
   }, []);
 
   const onEditCategory = useCallback(() => {
@@ -238,7 +248,11 @@ function Product() {
               Swal.fire("Changes are not saved", "", "error");
             }
           } finally {
-            fetchDataCategory();
+            fetchDataCategory().then((res) => {
+              const { response, response_status } = res;
+              if (Number(response_status) === 200) {
+              }
+            });
           }
         });
       }
@@ -247,6 +261,7 @@ function Product() {
 
   const onClear = () => {
     setIsActive("");
+    setCategoryProduct([]);
   };
 
   useEffect(() => {
@@ -312,8 +327,8 @@ function Product() {
 
             <TableApp<GetCategoryResponse>
               columns={columns}
-              isActive={isActive}
               data={responseCategory}
+              isActive={isActive}
               onPressItem={onCategoryDetail}
             />
           </div>
@@ -327,7 +342,11 @@ function Product() {
               Clear
             </Button>
           </div>
-          <div className="flex-1 rounded-md shadow-md border-[1px]"></div>
+          <div className="flex-1 rounded-md shadow-md border-[1px]">
+            {CategoryProduct.map((it, idx) => {
+              return <div key={idx}>{it.name}</div>;
+            })}
+          </div>
         </Flex>
       </SidebarPage>
     </AuthProvider>
