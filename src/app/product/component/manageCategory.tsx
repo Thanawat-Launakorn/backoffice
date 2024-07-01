@@ -89,7 +89,7 @@ export default function ManageCategory({
     if (isEdit) {
       return (
         <label htmlFor="upload-image">
-          <div className="group flex justify-center items-center relative min-h-[300px] cursor-pointer hover:bg-gray-300 transition-all duration-300 z-10">
+          <div className="group flex justify-center items-center relative min-h-[300px] cursor-pointer hover:bg-gray-300 transition-all duration-300 z-10 mb-5">
             <div className="w-full min-h-[300px] flex justify-center items-center align-middle text-white text-2xl z-10  opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               change
             </div>

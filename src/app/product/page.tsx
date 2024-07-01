@@ -1,21 +1,23 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import Swal from "sweetalert2";
 import "../asset/css/input.css";
 import { InputValues } from "../types";
-import { useRouter } from "next/navigation";
 import authProvider from "../provider/auth";
-import { storage } from "../helpers/storage";
 import tableComponent from "../component/table";
-import headerAtomService from "../atom/headers";
 import { useAtomValue, useSetAtom } from "jotai";
 import layoutComponent from "../component/layout";
 import { ColumnType } from "../component/table/table";
 import ManageCategory from "./component/manageCategory";
 import typographyComponent from "../component/typography";
-import { Button, Flex, useDisclosure } from "@chakra-ui/react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Button, Card, Flex, useDisclosure } from "@chakra-ui/react";
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import getCategoryAtomService from "../atom/category/getCategoryAtomService";
 import deleteCategoryAtomService from "../atom/category/deleteCategoryAtomService";
 import { GetCategoryResponse } from "../models/response_body/getCategoryResponseBody";
@@ -23,11 +25,23 @@ import detailCategoryAtomService from "../atom/category/detailCategoryAtomServic
 import axiosConfig from "../axios";
 import getCategoryProductAtomService from "../atom/product/getCategoryProductAtomService";
 import { GetCategoryProductResponse } from "../models/response_body/getCategoryProductResponseBody";
+import ItemCategoryProduct from "./component/itemCategoryProduct";
+import ManageCategoryProduct from "./component/manageCategoryProduct";
+import createCategoryProductAtomService from "../atom/product/createCategoryProductAtomService";
+import deleteProductAtomService from "../atom/product/deleteProductAtomService";
 
-type inputCategoryProps = {
+export type inputCategoryProps = {
   image: string;
   category: string;
   description: string;
+};
+
+export type inputCategoryProductProps = {
+  image: string;
+  name: string;
+  price: string;
+  description: string;
+  category_id: number;
 };
 
 const columns: ColumnType<GetCategoryResponse>[] = [
@@ -61,15 +75,23 @@ function Product() {
   const { Typography } = typographyComponent;
 
   const [images, setImages] = useState<File[]>([]);
+  const [imagesDrawer, setImagesDrawer] = useState<File[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isDrawerOpen,
+    onOpen: onDrawerOpen,
+    onClose: onDrawerClose,
+  } = useDisclosure();
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [isActive, setIsActive] = useState<string>("");
   const [imageURLs, setImageURLs] = useState<string[]>([]);
+  const [imageDrawerURLs, setImageDrawerURLs] = useState<string[]>([]);
   const [CategoryProduct, setCategoryProduct] = useState<
     GetCategoryProductResponse[]
   >([]);
 
   const deleteCategory = useSetAtom(deleteCategoryAtomService.fetchData);
+  const deleteCategoryProduct = useSetAtom(deleteProductAtomService.fetchData);
   const fetchDataCategory = useSetAtom(getCategoryAtomService.fetchData);
   const fetchDataDetailCategory = useSetAtom(
     detailCategoryAtomService.fetchData
@@ -77,16 +99,21 @@ function Product() {
   const fetchDataCategoryProduct = useSetAtom(
     getCategoryProductAtomService.fetchData
   );
-
-  const responseCategory = useAtomValue(getCategoryAtomService.response);
-  const responseCategoryProduct = useAtomValue(
-    getCategoryProductAtomService.response
+  const fetchDataCreateCategoryProduct = useSetAtom(
+    createCategoryProductAtomService.fetchData
   );
 
-  const isLoadingCategory = useAtomValue(getCategoryAtomService.isLoading);
+  const responseCategory = useAtomValue(getCategoryAtomService.response);
 
+  const isLoadingCategory = useAtomValue(getCategoryAtomService.isLoading);
   const isLoadingDetailCategory = useAtomValue(
     detailCategoryAtomService.isLoading
+  );
+  const isLoadingCategoryProduct = useAtomValue(
+    getCategoryProductAtomService.isLoading
+  );
+  const isLoadingCreateCategoryProduct = useAtomValue(
+    createCategoryProductAtomService.isLoading
   );
 
   const isErrorDetailCategory = useAtomValue(
@@ -108,21 +135,50 @@ function Product() {
     category: { value: "" },
     description: { value: "" },
   };
+
+  const initCategoryProduct: InputValues<keyof inputCategoryProductProps> = {
+    image: { value: "" },
+    name: { value: "" },
+    description: { value: "" },
+    price: { value: "" },
+    category_id: { value: 0 },
+  };
+
   const [inputCategory, setInputCategory] =
     useState<InputValues<keyof inputCategoryProps>>(initCategory);
 
+  const [inputCategoryProduct, setInputCategoryProduct] =
+    useState<InputValues<keyof inputCategoryProductProps>>(initCategoryProduct);
+
   const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
-    console.log(...event.target.files);
     setImages([...event.target.files]);
   };
 
-  const onChangeCategory = (identifier: string, value: string | File) => {
-    setInputCategory({
-      ...inputCategory,
-      [identifier]: { value },
-    });
+  const onImageDrawerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    setImagesDrawer([...event.target.files]);
   };
+
+  const onChangeCategory = useCallback(
+    (identifier: string, value: string | File) => {
+      setInputCategory({
+        ...inputCategory,
+        [identifier]: { value },
+      });
+    },
+    [inputCategory]
+  );
+
+  const onChangeCategoryProduct = useCallback(
+    (identifier: string, value: string | File | number) => {
+      setInputCategoryProduct({
+        ...inputCategoryProduct,
+        [identifier]: { value },
+      });
+    },
+    [inputCategoryProduct]
+  );
 
   useEffect(() => {
     if (images.length < 1) return;
@@ -130,11 +186,27 @@ function Product() {
     setImageURLs(newImageUrls);
   }, [images]);
 
+  useEffect(() => {
+    if (imagesDrawer.length < 1) return;
+
+    const newImageUrls = imagesDrawer.map((image) =>
+      URL.createObjectURL(image)
+    );
+    setImageDrawerURLs(newImageUrls);
+  }, [imagesDrawer]);
+
   const onCloseCreateCategory = () => {
     onClose();
     setImageURLs([]); // <=== clear images 🗑️
     setInputCategory(initCategory); // <=== clear input 🗑️
   };
+
+  const onCloseCreateCategoryProduct = () => {
+    onDrawerClose();
+    setImageDrawerURLs([]);
+    setInputCategoryProduct(initCategoryProduct);
+  };
+
   const onSaveCategory = useCallback(async () => {
     const formData = new FormData();
     const selectedFile = images[0] ?? "";
@@ -152,7 +224,7 @@ function Product() {
         try {
           if (Number(res.status) === 200) {
             fetchDataCategory().then((res) => {
-              const { response, response_status } = res;
+              const { response_status } = res;
               if (Number(response_status) === 200) {
                 Swal.fire("Saved!", "", "success");
               }
@@ -188,21 +260,68 @@ function Product() {
         }
       );
     }
-  }, [inputCategory, imageURLs]);
+  }, [inputCategory, imageURLs, images]);
+
+  const onSaveCategoryProduct = useCallback(async () => {
+    const formData = new FormData();
+    const selectedFile = imagesDrawer[0] ?? "";
+    if (selectedFile.size > 1024 * 1024 * 2) {
+      Swal.fire("File is over for upload", "", "warning");
+    }
+    formData.append("image", selectedFile);
+    formData.append("name", inputCategoryProduct.name.value);
+    formData.append("price", inputCategoryProduct.price.value);
+    formData.append("description", inputCategoryProduct.description.value);
+    formData.append("category_id", isActive);
+    console.log("inputCategoryProduct", inputCategoryProduct);
+    fetchDataCreateCategoryProduct(formData).then((res) => {
+      if (Number(res.response_status) === 201) {
+        fetchDataCategoryProduct({
+          cateogry_id: +isActive,
+        }).then((res) => {
+          try {
+            const { response, response_status } = res;
+            if (Number(response_status) === 200) {
+              Swal.fire("Saved!", "", "success");
+              setCategoryProduct(response);
+            } else {
+              Swal.fire("Change are not saved", "", "error");
+            }
+          } finally {
+            setImageDrawerURLs([]);
+            onCloseCreateCategoryProduct();
+          }
+        });
+      } else {
+        onCloseCreateCategoryProduct();
+        Swal.fire("Change are not saved", "", "error");
+      }
+    });
+  }, [
+    inputCategoryProduct,
+    imageDrawerURLs,
+    imagesDrawer,
+    isActive,
+    CategoryProduct,
+  ]);
 
   const loadCategory = React.useCallback(() => {
     fetchDataCategory();
   }, [fetchDataCategory]);
 
-  const onCategoryDetail = useCallback((id: string) => {
-    setIsActive(id);
-    fetchDataCategoryProduct({ cateogry_id: +id }).then((res) => {
-      const { response, response_status } = res;
-      if (Number(response_status) === 200) {
-        setCategoryProduct(response);
-      }
-    });
-  }, []);
+  const onCategoryDetail = useCallback(
+    (id: string) => {
+      setIsActive(id);
+      onChangeCategoryProduct("category_id", isActive);
+      fetchDataCategoryProduct({ cateogry_id: +id }).then((res) => {
+        const { response, response_status } = res;
+        if (Number(response_status) === 200) {
+          setCategoryProduct(response);
+        }
+      });
+    },
+    [isActive]
+  );
 
   const onEditCategory = useCallback(() => {
     onOpen();
@@ -259,10 +378,40 @@ function Product() {
     });
   }, [isActive]);
 
+  const onDeleteProduct = useCallback(
+    (id: number) => {
+      deleteCategoryProduct({ id }).then((res) => {
+        try {
+          if (Number(res.response_status) === 200) {
+            Swal.fire({
+              title: "Deleted!",
+              text: "Your file has been deleted.",
+              icon: "success",
+            });
+          } else {
+            Swal.fire("Changes are not saved", "", "error");
+          }
+        } finally {
+          fetchDataCategoryProduct({ cateogry_id: +isActive }).then((res) => {
+            const { response, response_status } = res;
+            if (Number(response_status) === 200) {
+              setCategoryProduct(response);
+            }
+          });
+        }
+      });
+    },
+    [isActive, CategoryProduct]
+  );
+
   const onClear = () => {
     setIsActive("");
     setCategoryProduct([]);
   };
+
+  const onCreateCategoryProduct = useCallback(() => {
+    onDrawerOpen();
+  }, [isActive]);
 
   useEffect(() => {
     loadCategory();
@@ -272,26 +421,65 @@ function Product() {
     return <div>loading...</div>;
   }
 
+  const getCategoryProduct = () => {
+    if (!isActive) {
+      return (
+        <div className="w-full h-full flex justify-center items-center">
+          <Typography title="select your category!" size="large" />
+        </div>
+      );
+    }
+
+    if (isActive) {
+      return (
+        <Fragment>
+          {CategoryProduct.map((it, idx) => {
+            return (
+              <ItemCategoryProduct
+                data={it}
+                key={idx}
+                onDelete={onDeleteProduct}
+              />
+            );
+          })}
+          {isActive && (
+            <Card
+              objectFit={"cover"}
+              margin={2.5}
+              height={200}
+              overflow="hidden"
+              variant="outline"
+              cursor={"pointer"}
+              transition={"ease-in-out .125s"}
+              direction={{ base: "column", sm: "row" }}
+              css={{
+                "&:hover": {
+                  backgroundColor: "#ced4da",
+                },
+              }}
+            >
+              <div
+                className="flex justify-center items-center w-full text-5xl text-green-500"
+                onClick={onCreateCategoryProduct}
+              >
+                +
+              </div>
+            </Card>
+          )}
+        </Fragment>
+      );
+    }
+
+    if (isLoadingCategoryProduct) {
+      return <Fragment>...isLoading</Fragment>;
+    }
+  };
+
   return (
     <AuthProvider>
       <SidebarPage>
-        <ManageCategory
-          isAPIsFail={false}
-          isAPIsLoading={isEdit ? isLoadingDetailCategory : isAPIsLoading}
-          isEdit={isEdit}
-          imageURLs={imageURLs}
-          inputCategory={inputCategory}
-          modalProps={{
-            isOpen,
-            onClose,
-          }}
-          onImageChange={onImageChange}
-          onSaveCategory={onSaveCategory}
-          onChangeCategory={onChangeCategory}
-          onCloseCreateCategory={onCloseCreateCategory}
-        />
-        <Flex flexGrow={1} flexDirection={"row"}>
-          <div className="w-[50%] flex flex-col">
+        <Flex flexDirection={"row"} flexGrow={"1"} height={"auto"}>
+          <div className="w-[50%] flex flex-col h-auto">
             <div className="w-[100%]">
               <Flex justify={"space-between"} justifyItems={"center"}>
                 <Button
@@ -332,7 +520,7 @@ function Product() {
               onPressItem={onCategoryDetail}
             />
           </div>
-          <div className="flex mx-6 flex-col justify-center">
+          <div className="flex mx-6 flex-col justify-center h-auto">
             <Typography
               title={"your product 👉🏻"}
               size="small"
@@ -342,12 +530,35 @@ function Product() {
               Clear
             </Button>
           </div>
-          <div className="flex-1 rounded-md shadow-md border-[1px]">
-            {CategoryProduct.map((it, idx) => {
-              return <div key={idx}>{it.name}</div>;
-            })}
+          <div className="flex-1 h-[450px] rounded-md shadow-md border-[1px] overflow-y-auto">
+            {getCategoryProduct()}
           </div>
         </Flex>
+        <ManageCategory
+          isAPIsFail={false}
+          isAPIsLoading={isEdit ? isLoadingDetailCategory : isAPIsLoading}
+          isEdit={isEdit}
+          imageURLs={imageURLs}
+          inputCategory={inputCategory}
+          modalProps={{
+            isOpen,
+            onClose,
+          }}
+          onImageChange={onImageChange}
+          onSaveCategory={onSaveCategory}
+          onChangeCategory={onChangeCategory}
+          onCloseCreateCategory={onCloseCreateCategory}
+        />
+
+        <ManageCategoryProduct
+          inputCategoryProduct={inputCategoryProduct}
+          imageURLs={imageDrawerURLs}
+          onImageChange={onImageDrawerChange}
+          onChange={onChangeCategoryProduct}
+          onSaveCategoryProduct={onSaveCategoryProduct}
+          onCloseCategoryProduct={onCloseCreateCategoryProduct}
+          drawerProps={{ isOpen: isDrawerOpen, onClose: onDrawerClose }}
+        />
       </SidebarPage>
     </AuthProvider>
   );
